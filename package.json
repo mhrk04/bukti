@@ -1,0 +1,12 @@
+{
+  "name": "bukti",
+  "private": true,
+  "packageManager": "pnpm@11.8.0",
+  "scripts": {
+    "build": "pnpm --filter web build",
+    "dev": "pnpm --filter web dev",
+    "typecheck": "pnpm --filter web typecheck",
+    "move:build": "sui move build --path move/bukti",
+    "move:test": "sui move test --path move/bukti"
+  }
+}

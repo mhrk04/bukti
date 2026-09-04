@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+web/node_modules/
+.pnpm-store/
+
+# Next.js
+web/.next/
+web/out/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Sui / Move artifacts
+move/**/build/
+move/**/traces/
+move/**/Pub.*.toml
+move/**/.trace
+move/**/.coverage*
+
+# Local tooling
+.suiperpower/
+.DS_Store
+*.log
+*.tsbuildinfo
+.turbo/
+.vercel/
+
+# Editors
+.idea/
+.vscode/
+*.swp
