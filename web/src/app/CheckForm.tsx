@@ -4,8 +4,15 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import type { ClaimCheck } from "@/lib/gonka";
 
+function Tip({ label, children }: { label: string; children: string }) {
+  return <span className="tooltip" title={children} tabIndex={0} aria-label={label + ": " + children}>{label}</span>;
+}
+
 export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => void }) {
-  const [claim, setClaim] = useState("");
+  const [claim, setClaim] = useState(() => {
+    const value = new URLSearchParams(window.location.search).get("claim") ?? "";
+    return value.slice(0, 4_000);
+  });
   const [result, setResult] = useState<ClaimCheck | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,6 +60,14 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
         </button>
       </form>
       {error && <p className="error" role="alert">{error}</p>}
+      {loading && (
+        <div className="result skeleton" role="status" aria-label="Checking claim">
+          <span className="skeleton-line skeleton-score" />
+          <span className="skeleton-line" />
+          <span className="skeleton-line skeleton-short" />
+          <p className="muted">Retrieving evidence and comparing models…</p>
+        </div>
+      )}
       {result && (
         <article className="result" aria-live="polite">
           <div className="score-row">
@@ -85,14 +100,21 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
                   <li className="source-item" key={source.url}>
                     <p className="source-title">
                       {source.title || source.url}
-                      {source.trusted && <span className="trusted-tag"> · trusted</span>}
+                      {source.official ? (
+                        <span className="official-tag"> · <Tip label="official" children="The source is the organisation's own official website or publication." /></span>
+                      ) : source.trusted ? (
+                        <span className="trusted-tag"> · <Tip label="trusted" children="The source has been identified as a generally reliable publisher for this topic." /></span>
+                      ) : null}
                     </p>
                     <p className="muted">
                       <a href={source.url} target="_blank" rel="noreferrer noopener">
                         {source.url}
                       </a>
                     </p>
-                    <p className="muted">Retrieved: {new Date(source.retrievedAt).toLocaleString()}</p>
+                    {source.publishedAt && (
+                      <p className="muted"><Tip label="Published" children="The date the source says this item was originally published." />: {new Date(source.publishedAt).toLocaleString()}</p>
+                    )}
+                    <p className="muted"><Tip label="Retrieved" children="The date Bukti fetched this source for this check." />: {new Date(source.retrievedAt).toLocaleString()}</p>
                     <p className="excerpt">
                       {source.excerpt.slice(0, 300)}
                       {source.excerpt.length > 300 ? "…" : ""}
@@ -102,7 +124,7 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
               </ul>
             </section>
           )}
-          <p className="muted">Model disagreement: {result.disagreement} points</p>
+          <p className="muted"><Tip label="Model disagreement" children="The point difference between the highest and lowest model scores; higher means less consensus." />: {result.disagreement} points</p>
           {result.warnings.length > 0 && <p className="warning">Partial result: {result.warnings.join("; ")}</p>}
           <div className="model-grid">
             {result.results.map((item) => (
@@ -114,9 +136,21 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
                   <div className="model-citations">
                     <p className="eyebrow">CITED SOURCES</p>
                     <ul>
-                      {item.evidence.map((url) => (
-                        <li key={url}>
-                          <a href={url} target="_blank" rel="noreferrer noopener">{url}</a>
+                      {item.evidence.map((citation) => (
+                        <li key={citation.url}>
+                          <span
+                            className={
+                              citation.stance === "supports"
+                                ? "stance-tag stance-supports"
+                                : "stance-tag stance-contradicts"
+                            }
+                          >
+                            {citation.stance === "supports" ? "Supports" : "Contradicts"}
+                          </span>{" "}
+                          <a href={citation.url} target="_blank" rel="noreferrer noopener">
+                            {citation.url}
+                          </a>
+                          {citation.quote && <p className="citation-quote">“{citation.quote}”</p>}
                         </li>
                       ))}
                     </ul>

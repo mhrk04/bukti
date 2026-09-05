@@ -38,6 +38,16 @@ Copy `web/.env.example` to `web/.env.local` before adding the server-only Gonka 
 After publishing the Move package to Sui testnet, add its package ID as
 `NEXT_PUBLIC_BUKTI_PACKAGE_ID` in `web/.env.local` to enable immutable report publishing.
 
+## Testnet demo
+
+The BUDI95 demo is published and immutable:
+
+- Sui package: `0xb414425d559cd963c693a3afabae0ad48e4dcd458c1c4cab97aece3fe0157631`
+- Report object: `0xb931f7ae5fc61ba7f10bea5104f2963c9e069d8754e3a9119d08693deef5f7b7`
+- Transaction: `3QnwMuNqUcVxyqRke4qL3vEEwwmqzcFtoAwUsScx4Gjc`
+- Walrus blob: `YIagqBooveVw2ifLbAoUzVetl4DiWizEvGXP4sy_G7E`
+- Canonical snapshot SHA-256: `f1c22bc74a461c61939ef66cfa6672ce1be0d7cd00202a955656eb6fb66b299b`
+
 ## Gonka integration
 
 `POST /api/check` calls `https://api.gonkarouter.io/v1/messages` from the server, aggregates the configured models, captures each `X-Request-Id`, and exposes the IDs in the result. Configure one or more comma-separated models with `GONKA_MODELS`; model IDs are account-specific, so use the IDs available in your Gonka dashboard. See the [Gonka Router documentation](https://gonkarouter.io/docs).

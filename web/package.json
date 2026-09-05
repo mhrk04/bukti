@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "selfcheck": "node --test src/lib/evidence.selfcheck.ts src/lib/search.selfcheck.ts"
+    "selfcheck": "node --test src/lib/evidence.selfcheck.ts src/lib/search.selfcheck.ts src/lib/citations.selfcheck.ts src/lib/canonical-report.selfcheck.ts src/lib/walrus.selfcheck.ts src/lib/reports-index.selfcheck.ts"
   },
   "dependencies": {
     "@mysten/dapp-kit-core": "1.6.23",
