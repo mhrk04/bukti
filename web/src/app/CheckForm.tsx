@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import type { ClaimCheck } from "@/lib/gonka";
 
-export function CheckForm() {
+export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => void }) {
   const [claim, setClaim] = useState("");
   const [result, setResult] = useState<ClaimCheck | null>(null);
   const [error, setError] = useState("");
@@ -25,6 +25,7 @@ export function CheckForm() {
       const body = (await response.json()) as ClaimCheck & { error?: string };
       if (!response.ok) throw new Error(body.error || "Unable to check claim");
       setResult(body);
+      onResult?.(body);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to check claim");
     } finally {

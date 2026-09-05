@@ -35,6 +35,9 @@ pnpm move:test
 
 Copy `web/.env.example` to `web/.env.local` before adding the server-only Gonka key. Never prefix the key with `NEXT_PUBLIC_`.
 
+After publishing the Move package to Sui testnet, add its package ID as
+`NEXT_PUBLIC_BUKTI_PACKAGE_ID` in `web/.env.local` to enable immutable report publishing.
+
 ## Gonka integration
 
 `POST /api/check` calls `https://api.gonkarouter.io/v1/messages` from the server, aggregates the configured models, captures each `X-Request-Id`, and exposes the IDs in the result. Configure one or more comma-separated models with `GONKA_MODELS`; model IDs are account-specific, so use the IDs available in your Gonka dashboard. See the [Gonka Router documentation](https://gonkarouter.io/docs).

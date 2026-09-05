@@ -37,4 +37,8 @@ button:disabled { cursor: wait; opacity: .6; }
 .model-name { color: var(--accent); font-size: .8rem; overflow-wrap: anywhere; }
 .request-id { color: var(--muted); font-family: monospace; font-size: .75rem; overflow-wrap: anywhere; }
 .health-link { margin-top: 1.5rem; font-size: .85rem; }
+.wallet-row { display: flex; justify-content: flex-end; margin-bottom: 2rem; }
+.publish-card { margin-top: 1rem; border: 1px solid var(--line); padding: 1.5rem; }
+.publish-card button { margin-top: 0; }
+.success { color: var(--accent); line-height: 1.5; overflow-wrap: anywhere; }
 @media (max-width: 640px) { .shell { padding-top: 7rem; } .card { display: block; } .card a { display: inline-block; margin-top: 2rem; } }
