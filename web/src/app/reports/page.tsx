@@ -23,6 +23,15 @@ function ReportRow({ report }: { report: PublicReport }) {
       <p className="health-link">
         <a href={`/report/${report.objectId}`}>View public report →</a>
       </p>
+      <p className="health-link">
+        <a
+          href={`https://testnet.suivision.xyz/object/${report.objectId}`}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          Verify on SuiVision →
+        </a>
+      </p>
     </li>
   );
 }
