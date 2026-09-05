@@ -65,6 +65,14 @@ export const TRUSTED_NEWS_DOMAINS: readonly string[] = [
   "utusan.com.my",
 ] as const;
 
+const SOCIAL_DOMAINS: readonly string[] = [
+  "facebook.com",
+  "instagram.com",
+  "tiktok.com",
+  "x.com",
+  "twitter.com",
+] as const;
+
 /**
  * All preferred Malaysian domains (official + established news) that Bukti
  * prefers when relevant. Matched as suffixes against the result host. This is a
@@ -98,6 +106,8 @@ export type SearchSource = {
   official: boolean;
   /** Provider relevance score, used before provenance when ranking results. */
   relevance?: number;
+  /** True for social platforms, which are lower-signal than publishers. */
+  social: boolean;
 };
 
 /** Raw shape of a Tavily result item (only the fields we consume). */
@@ -151,6 +161,15 @@ export function isOfficialSource(url: string): boolean {
   return hostMatches(url, OFFICIAL_DOMAINS);
 }
 
+function isSocialSource(url: string): boolean {
+  return hostMatches(url, SOCIAL_DOMAINS);
+}
+
+/** Claims explicitly asking about the present should prefer fresh coverage. */
+export function isTimeSensitiveClaim(claim: string): boolean {
+  return /\b(today|latest|current|now|recent|terkini|semasa|kini|hari ini|sekarang|terbaru|baharu|minggu ini|bulan ini)\b/i.test(claim);
+}
+
 function normalizeWhitespace(input: string): string {
   return input.replace(/\s+/g, " ").trim();
 }
@@ -192,6 +211,7 @@ export function normalizeSearchResult(
     trusted: isTrustedSource(url),
     official: isOfficialSource(url),
     relevance: typeof item.score === "number" && Number.isFinite(item.score) ? item.score : undefined,
+    social: isSocialSource(url),
   };
 }
 
@@ -225,7 +245,7 @@ function publishedTime(source: SearchSource): number | null {
  * Sources without a relevance score sort after scored sources. Sources without
  * a publication date sort after dated ones within the same relevance tier.
  */
-export function rankAndLimit(sources: SearchSource[]): SearchSource[] {
+export function rankAndLimit(sources: SearchSource[], preferFresh = false): SearchSource[] {
   const tier = (source: SearchSource): number => {
     if (source.official) return 0;
     if (source.trusted) return 1;
@@ -233,6 +253,16 @@ export function rankAndLimit(sources: SearchSource[]): SearchSource[] {
   };
   const indexed = sources.map((source, index) => ({ source, index }));
   indexed.sort((a, b) => {
+    if (a.source.social !== b.source.social) return a.source.social ? 1 : -1;
+    if (preferFresh) {
+      const aTime = publishedTime(a.source);
+      const bTime = publishedTime(b.source);
+      if (aTime !== bTime) {
+        if (aTime === null) return 1;
+        if (bTime === null) return -1;
+        return bTime - aTime;
+      }
+    }
     if (a.source.relevance !== undefined || b.source.relevance !== undefined) {
       if (a.source.relevance === undefined) return 1;
       if (b.source.relevance === undefined) return -1;
@@ -400,7 +430,7 @@ export async function searchTrustedSources(claim: string): Promise<SearchSource[
     ...(news.status === "fulfilled" ? news.value : []),
   ];
 
-  return rankAndLimit(dedupeSources(merged));
+  return rankAndLimit(dedupeSources(merged), isTimeSensitiveClaim(claim));
 }
 
 /**

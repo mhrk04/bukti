@@ -10,6 +10,7 @@ import {
   rankAndLimit,
   renderSearchBlock,
   SEARCH_LIMITS,
+  isTimeSensitiveClaim,
   type SearchSource,
 } from "./search.ts";
 
@@ -27,6 +28,7 @@ function make(
     publishedAt: null,
     trusted: isTrustedSource(url),
     official: isOfficialSource(url),
+    social: false,
     ...overrides,
   };
 }
@@ -88,6 +90,7 @@ test("normalizeSearchResult bounds fields, sets provenance, and preserves publis
   assert.equal(source.retrievedAt, AT);
   assert.equal(source.publishedAt, new Date("2026-09-01T08:00:00Z").toISOString());
   assert.equal(source.relevance, 0.91);
+  assert.equal(source.social, false);
 
   // A news source with no date: trusted, not official, publishedAt null.
   const news = normalizeSearchResult({ url: "https://www.bernama.com/x", title: "N", content: "Reported text" }, AT);
@@ -137,6 +140,21 @@ test("rankAndLimit prefers a relevant local-news result over an unrelated offici
     make("https://www.astroawani.com", { relevance: 0.91 }),
   ]);
   assert.equal(ranked[0].url, "https://www.astroawani.com");
+});
+
+test("time-sensitive ranking prefers fresh publisher coverage and puts social sources last", () => {
+  const ranked = rankAndLimit([
+    make("https://www.mof.gov.my", { publishedAt: "2026-09-04T00:00:00Z", relevance: 0.95 }),
+    make("https://www.bernama.com", { publishedAt: "2026-09-03T00:00:00Z", relevance: 0.8 }),
+    make("https://www.tiktok.com", { publishedAt: "2026-09-05T00:00:00Z", relevance: 0.99, social: true }),
+  ], true);
+  assert.equal(ranked[0].url, "https://www.mof.gov.my");
+  assert.equal(ranked.at(-1)?.url, "https://www.tiktok.com");
+});
+
+test("time-sensitive claim detection handles Malay and English wording", () => {
+  assert.equal(isTimeSensitiveClaim("latest court decision"), true);
+  assert.equal(isTimeSensitiveClaim("keputusan mahkamah tahun 2023"), false);
 });
 
 // Within a tier, the most recent publication wins; undated sorts last.
