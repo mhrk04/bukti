@@ -13,7 +13,6 @@ const dAppKit = createDAppKit({
   networks: ["testnet"],
   createClient: (network) => new SuiGrpcClient({ network, baseUrl: "https://fullnode.testnet.sui.io:443" }),
   storageKey: "bukti-dapp-kit",
-  slushWalletConfig: null,
 });
 
 declare module "@mysten/dapp-kit-react" {
