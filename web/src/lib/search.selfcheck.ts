@@ -11,6 +11,7 @@ import {
   renderSearchBlock,
   SEARCH_LIMITS,
   isTimeSensitiveClaim,
+  isMalaysiaClaim,
   type SearchSource,
 } from "./search.ts";
 
@@ -54,6 +55,12 @@ test("isOfficialSource distinguishes official government from trusted news", () 
   // A trusted news source is trusted but not official.
   assert.equal(isTrustedSource("https://www.thestar.com.my/x"), true);
   assert.equal(isOfficialSource("https://www.thestar.com.my/x"), false);
+});
+
+test("isMalaysiaClaim limits Malaysian claims to Malaysian sources", () => {
+  assert.equal(isMalaysiaClaim("Malaysia raises the minimum wage"), true);
+  assert.equal(isMalaysiaClaim("Malaysian elections are underway"), true);
+  assert.equal(isMalaysiaClaim("Indonesia raises the minimum wage"), false);
 });
 
 // Publication date parsing: valid dates become ISO strings; junk is null.

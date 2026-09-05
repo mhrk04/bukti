@@ -170,6 +170,11 @@ export function isTimeSensitiveClaim(claim: string): boolean {
   return /\b(today|latest|current|now|recent|terkini|semasa|kini|hari ini|sekarang|terbaru|baharu|minggu ini|bulan ini)\b/i.test(claim);
 }
 
+/** Claims about Malaysia must use the Malaysian source allowlist. */
+export function isMalaysiaClaim(claim: string): boolean {
+  return /\bmalaysia(?:n|'s)?\b/i.test(claim);
+}
+
 function normalizeWhitespace(input: string): string {
   return input.replace(/\s+/g, " ").trim();
 }
@@ -344,6 +349,7 @@ async function runSearchPass(
   baseUrl: string,
   query: string,
   topic: "general" | "news",
+  malaysiaOnly: boolean,
 ): Promise<SearchSource[]> {
   const payload: Record<string, unknown> = {
     query,
@@ -353,9 +359,7 @@ async function runSearchPass(
     max_results: SEARCH_LIMITS.maxResults * 2,
     include_answer: false,
     include_raw_content: false,
-    // Keep the search broad, then rank preferred Malaysian sources above other
-    // public results. A hard domain filter would hide neutral or contradicting
-    // sources when no preferred source exists.
+    ...(malaysiaOnly ? { include_domains: PREFERRED_DOMAINS } : {}),
   };
   if (topic === "news") {
     // Time-bound the second query to recent news so a stale article cannot
@@ -391,9 +395,10 @@ async function runSearchPass(
 
   const rawResults = Array.isArray(body.results) ? (body.results as TavilyResultItem[]) : [];
   const retrievedAt = new Date().toISOString();
-  return rawResults
+  const sources = rawResults
     .map((item) => normalizeSearchResult(item, retrievedAt))
     .filter((source): source is SearchSource => source !== null);
+  return malaysiaOnly ? sources.filter((source) => source.trusted) : sources;
 }
 
 /**
@@ -412,10 +417,11 @@ export async function searchTrustedSources(claim: string): Promise<SearchSource[
   const baseUrl = (process.env.TAVILY_BASE_URL || DEFAULT_TAVILY_BASE_URL).replace(/\/$/, "");
   const query = normalizeWhitespace(claim).slice(0, 400);
   if (query.length === 0) return [];
+  const malaysiaOnly = isMalaysiaClaim(query);
 
   const [general, news] = await Promise.allSettled([
-    runSearchPass(apiKey, baseUrl, query, "general"),
-    runSearchPass(apiKey, baseUrl, query, "news"),
+    runSearchPass(apiKey, baseUrl, query, "general", malaysiaOnly),
+    runSearchPass(apiKey, baseUrl, query, "news", malaysiaOnly),
   ]);
 
   // Degrade gracefully: only fail if every pass failed. A single successful
