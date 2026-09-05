@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createDAppKit, DAppKitProvider, useCurrentAccount, useDAppKit } from "@mysten/dapp-kit-react";
 import { ConnectButton } from "@mysten/dapp-kit-react/ui";
 import { SuiGrpcClient } from "@mysten/sui/grpc";
@@ -12,6 +12,7 @@ const dAppKit = createDAppKit({
   networks: ["testnet"],
   createClient: (network) => new SuiGrpcClient({ network, baseUrl: "https://fullnode.testnet.sui.io:443" }),
   storageKey: "bukti-dapp-kit",
+  slushWalletConfig: null,
 });
 
 declare module "@mysten/dapp-kit-react" {
@@ -90,6 +91,17 @@ function PublishReceipt({ result }: { result: ClaimCheck }) {
 
 export function WalletApp() {
   const [result, setResult] = useState<ClaimCheck | null>(null);
+
+  useEffect(() => {
+    const ignoreWalletCancellation = (event: PromiseRejectionEvent) => {
+      if (event.reason instanceof Error && event.reason.message === "User closed the wallet window") {
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener("unhandledrejection", ignoreWalletCancellation);
+    return () => window.removeEventListener("unhandledrejection", ignoreWalletCancellation);
+  }, []);
 
   return (
     <DAppKitProvider dAppKit={dAppKit}>
