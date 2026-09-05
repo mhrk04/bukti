@@ -11,6 +11,7 @@ const progressMessages = [
   "Asking the second Gonka model…",
   "Comparing both model assessments…",
 ];
+const DEFAULT_CLAIM = "BUDI95 gives 300 litres from 1 September 2026";
 
 function Tip({ label, children }: { label: string; children: string }) {
   return <span className="tooltip" title={children} tabIndex={0} aria-label={label + ": " + children}>{label}</span>;
@@ -18,7 +19,7 @@ function Tip({ label, children }: { label: string; children: string }) {
 
 export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => void }) {
   const [claim, setClaim] = useState(() => {
-    const value = new URLSearchParams(window.location.search).get("claim") ?? "";
+    const value = new URLSearchParams(window.location.search).get("claim") ?? DEFAULT_CLAIM;
     return value.slice(0, 4_000);
   });
   const [result, setResult] = useState<ClaimCheck | null>(null);
@@ -46,7 +47,7 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ claim }),
-        signal: AbortSignal.timeout(55_000),
+        signal: AbortSignal.timeout(115_000),
       });
       const body = (await response.json()) as ClaimCheck & { error?: string };
       if (!response.ok) throw new Error(body.error || "Unable to check claim");
