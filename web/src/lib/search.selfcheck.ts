@@ -76,6 +76,7 @@ test("normalizeSearchResult bounds fields, sets provenance, and preserves publis
       title: "  Berita   Rasmi  ",
       content: long,
       published_date: "2026-09-01T08:00:00Z",
+      score: 0.91,
     },
     AT,
   );
@@ -86,6 +87,7 @@ test("normalizeSearchResult bounds fields, sets provenance, and preserves publis
   assert.equal(source.official, true);
   assert.equal(source.retrievedAt, AT);
   assert.equal(source.publishedAt, new Date("2026-09-01T08:00:00Z").toISOString());
+  assert.equal(source.relevance, 0.91);
 
   // A news source with no date: trusted, not official, publishedAt null.
   const news = normalizeSearchResult({ url: "https://www.bernama.com/x", title: "N", content: "Reported text" }, AT);
@@ -127,6 +129,14 @@ test("rankAndLimit keeps a recent official source above an older article", () =>
   assert.equal(ranked[1].url, "https://www.bernama.com/news");
   // General/contradicting sources still preserved.
   assert.ok(ranked.some((source) => source.official === false && source.trusted === false));
+});
+
+test("rankAndLimit prefers a relevant local-news result over an unrelated official result", () => {
+  const ranked = rankAndLimit([
+    make("https://www.mof.gov.my", { relevance: 0.32 }),
+    make("https://www.astroawani.com", { relevance: 0.91 }),
+  ]);
+  assert.equal(ranked[0].url, "https://www.astroawani.com");
 });
 
 // Within a tier, the most recent publication wins; undated sorts last.

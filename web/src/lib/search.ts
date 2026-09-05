@@ -96,6 +96,8 @@ export type SearchSource = {
   trusted: boolean;
   /** True when the host is an official Malaysian government/primary source. */
   official: boolean;
+  /** Provider relevance score, used before provenance when ranking results. */
+  relevance?: number;
 };
 
 /** Raw shape of a Tavily result item (only the fields we consume). */
@@ -105,6 +107,7 @@ type TavilyResultItem = {
   content?: unknown;
   /** Tavily returns this on news-topic results; may be absent. */
   published_date?: unknown;
+  score?: unknown;
 };
 
 type TavilyResponse = {
@@ -188,6 +191,7 @@ export function normalizeSearchResult(
     publishedAt: normalizePublishedDate(item.published_date),
     trusted: isTrustedSource(url),
     official: isOfficialSource(url),
+    relevance: typeof item.score === "number" && Number.isFinite(item.score) ? item.score : undefined,
   };
 }
 
@@ -215,14 +219,11 @@ function publishedTime(source: SearchSource): number | null {
 }
 
 /**
- * Ranks sources so that a recent official result is never displaced by an older
- * speculative article, while still preserving general and contradicting
- * sources within the cap. Ordering priority:
- *   1. official government/primary sources, most recent first;
- *   2. established trusted news, most recent first;
- *   3. all other public sources, most recent first.
- * Sources without a publication date sort after dated ones in their tier so a
- * dated recent official update outranks an undated one. Stable within ties.
+ * Ranks sources by provider relevance first, then provenance and recency. This
+ * keeps a relevant local-news result above an unrelated official article while
+ * still preferring official sources when relevance is tied or unavailable.
+ * Sources without a relevance score sort after scored sources. Sources without
+ * a publication date sort after dated ones within the same relevance tier.
  */
 export function rankAndLimit(sources: SearchSource[]): SearchSource[] {
   const tier = (source: SearchSource): number => {
@@ -232,6 +233,13 @@ export function rankAndLimit(sources: SearchSource[]): SearchSource[] {
   };
   const indexed = sources.map((source, index) => ({ source, index }));
   indexed.sort((a, b) => {
+    if (a.source.relevance !== undefined || b.source.relevance !== undefined) {
+      if (a.source.relevance === undefined) return 1;
+      if (b.source.relevance === undefined) return -1;
+      if (a.source.relevance !== b.source.relevance) {
+        return b.source.relevance - a.source.relevance;
+      }
+    }
     const tierDiff = tier(a.source) - tier(b.source);
     if (tierDiff !== 0) return tierDiff;
     const aTime = publishedTime(a.source);
@@ -306,7 +314,6 @@ async function runSearchPass(
   baseUrl: string,
   query: string,
   topic: "general" | "news",
-  officialOnly = false,
 ): Promise<SearchSource[]> {
   const payload: Record<string, unknown> = {
     query,
@@ -325,12 +332,6 @@ async function runSearchPass(
     // masquerade as a current update for time-sensitive claims.
     payload.days = SEARCH_LIMITS.recentDays;
   }
-  if (officialOnly) {
-    // The official pass is intentionally separate from the broad searches:
-    // it finds a primary update without hiding independent coverage.
-    payload.include_domains = OFFICIAL_DOMAINS;
-  }
-
   let response: Response;
   try {
     response = await fetch(`${baseUrl}/search`, {
@@ -367,13 +368,12 @@ async function runSearchPass(
 
 /**
  * Retrieves up to `SEARCH_LIMITS.maxResults` live sources for a claim through
- * Tavily. Runs broad web, time-bounded news, and official-domain passes in
- * parallel. The official pass finds a primary update without hiding general
- * (and possibly contradicting) coverage. Results are deduplicated by URL and
- * ranked so a recent official source is not displaced by an older speculative
- * article. Returns an empty array when search is not configured so the caller
- * can degrade to a source-less path. Throws SearchError only when every pass
- * fails. All returned fields are bounded and untrusted.
+ * open general and time-bounded news searches. Results are deduplicated by URL
+ * and ranked by the provider's relevance score, with provenance as a
+ * tie-breaker. This works across topics such as Malaysian policy and crypto.
+ * Returns an empty array when search is not configured so the caller can
+ * degrade to a source-less path. Throws SearchError only when every pass fails.
+ * All returned fields are bounded and untrusted.
  */
 export async function searchTrustedSources(claim: string): Promise<SearchSource[]> {
   const apiKey = process.env.TAVILY_API_KEY;
@@ -383,15 +383,14 @@ export async function searchTrustedSources(claim: string): Promise<SearchSource[
   const query = normalizeWhitespace(claim).slice(0, 400);
   if (query.length === 0) return [];
 
-  const [general, news, official] = await Promise.allSettled([
+  const [general, news] = await Promise.allSettled([
     runSearchPass(apiKey, baseUrl, query, "general"),
     runSearchPass(apiKey, baseUrl, query, "news"),
-    runSearchPass(apiKey, baseUrl, query, "general", true),
   ]);
 
   // Degrade gracefully: only fail if every pass failed. A single successful
   // pass still yields usable, ranked sources.
-  if (general.status === "rejected" && news.status === "rejected" && official.status === "rejected") {
+  if (general.status === "rejected" && news.status === "rejected") {
     const reason = general.reason instanceof SearchError ? general.reason.message : "Search request failed";
     throw new SearchError(reason);
   }
@@ -399,7 +398,6 @@ export async function searchTrustedSources(claim: string): Promise<SearchSource[
   const merged = [
     ...(general.status === "fulfilled" ? general.value : []),
     ...(news.status === "fulfilled" ? news.value : []),
-    ...(official.status === "fulfilled" ? official.value : []),
   ];
 
   return rankAndLimit(dedupeSources(merged));
