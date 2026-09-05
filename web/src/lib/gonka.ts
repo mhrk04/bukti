@@ -18,6 +18,9 @@ type GonkaMessage = {
   content?: Array<{ type?: string; text?: string }>;
 };
 
+const GONKA_TIMEOUT_MS = 20_000;
+const GONKA_MAX_TOKENS = 1_200;
+
 export type { Citation, CitationStance } from "@/lib/citations";
 
 export type ModelCheck = {
@@ -180,9 +183,7 @@ async function checkWithModel(
     },
     body: JSON.stringify({
       model,
-    // Reasoning models may spend several thousand tokens before their JSON.
-    // Keep enough completion budget so a valid result is not truncated mid-thought.
-    max_tokens: 8192,
+      max_tokens: GONKA_MAX_TOKENS,
       messages: [
         {
           role: "user",
@@ -190,7 +191,7 @@ async function checkWithModel(
         },
       ],
     }),
-    signal: AbortSignal.timeout(90_000),
+    signal: AbortSignal.timeout(GONKA_TIMEOUT_MS),
   });
 
   const body = (await response.json()) as GonkaMessage & { error?: { message?: string } };

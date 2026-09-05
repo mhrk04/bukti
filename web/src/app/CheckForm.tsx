@@ -29,13 +29,20 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ claim }),
+        signal: AbortSignal.timeout(55_000),
       });
       const body = (await response.json()) as ClaimCheck & { error?: string };
       if (!response.ok) throw new Error(body.error || "Unable to check claim");
       setResult(body);
       onResult?.(body);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to check claim");
+      setError(
+        caught instanceof DOMException && caught.name === "TimeoutError"
+          ? "Verification timed out. Please retry with a shorter claim."
+          : caught instanceof Error
+            ? caught.message
+            : "Unable to check claim",
+      );
     } finally {
       setLoading(false);
     }
