@@ -104,6 +104,9 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
             <div className="verdict">{result.aggregateVerdict}</div>
           </div>
           <p className="claim">“{result.claim}”</p>
+          <p className={result.consensus ? "success" : "warning"}>
+            {result.consensus ? "Consensus: both Gonka models returned results." : "Single-model assessment: consensus unavailable."}
+          </p>
           {result.evidence && (
             <section className="evidence" aria-label="Retrieved source">
               <p className="eyebrow">RETRIEVED SOURCE</p>

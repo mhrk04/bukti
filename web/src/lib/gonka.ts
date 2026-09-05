@@ -61,6 +61,7 @@ export type ClaimSource = {
 
 export type ClaimCheck = {
   claim: string;
+  consensus: boolean;
   aggregateScore: number;
   aggregateVerdict: string;
   disagreement: number;
@@ -304,6 +305,7 @@ export async function checkClaim(claim: string): Promise<ClaimCheck> {
 
   return {
     claim,
+    consensus: results.length >= 2,
     aggregateScore,
     aggregateVerdict:
       aggregateScore >= 70 ? "likely supported" : aggregateScore <= 30 ? "likely unsupported" : "uncertain",
