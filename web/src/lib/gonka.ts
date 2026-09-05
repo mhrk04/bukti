@@ -18,7 +18,7 @@ type GonkaResponse = {
   choices?: Array<{ message?: { content?: string | null } }>;
 };
 
-const GONKA_TIMEOUT_MS = 20_000;
+const GONKA_TIMEOUT_MS = 45_000;
 const GONKA_MAX_TOKENS = 2_000;
 
 export type { Citation, CitationStance } from "@/lib/citations";
