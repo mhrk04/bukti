@@ -272,9 +272,8 @@ export async function checkClaim(claim: string): Promise<ClaimCheck> {
   ];
   if (results.length === 0) throw new Error("Gonka returned no usable model results");
 
-  // A source-backed verification must be corroborated by at least two models.
   if (hasLiveSources && results.length < 2) {
-    throw new Error("Source-backed verification requires at least two successful Gonka models");
+    warnings.push("Only one Gonka model returned a usable result; consensus is unavailable.");
   }
 
   const scores = results.map((result) => result.score);
