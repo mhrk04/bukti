@@ -6,7 +6,7 @@ Malaysia-first public-claim evidence receipts powered by Gonka Router and immuta
 
 - Next.js 16 + React 19 + TypeScript
 - Sui Move package with immutable `TruthReport` objects
-- Gonka Router server integration planned through the Anthropic Messages API
+- Gonka Router server integration through the Anthropic Messages API
 - Testnet-first deployment
 
 ## Repository layout
@@ -33,11 +33,11 @@ pnpm move:build
 pnpm move:test
 ```
 
-Copy `.env.example` to `.env.local` before adding the server-only Gonka key. Never prefix the key with `NEXT_PUBLIC_`.
+Copy `web/.env.example` to `web/.env.local` before adding the server-only Gonka key. Never prefix the key with `NEXT_PUBLIC_`.
 
 ## Gonka integration
 
-The next slice will call `https://api.gonkarouter.io/v1/messages` from a server route, capture the `X-Request-Id` response header, and expose the receipt ID in the report. See the [Gonka Router documentation](https://gonkarouter.io/docs).
+`POST /api/check` calls `https://api.gonkarouter.io/v1/messages` from the server, aggregates the configured models, captures each `X-Request-Id`, and exposes the IDs in the result. Configure one or more comma-separated models with `GONKA_MODELS`; model IDs are account-specific, so use the IDs available in your Gonka dashboard. See the [Gonka Router documentation](https://gonkarouter.io/docs).
 
 ## Product invariant
 

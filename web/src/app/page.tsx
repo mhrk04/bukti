@@ -1,3 +1,5 @@
+import { CheckForm } from "./CheckForm";
+
 export default function Home() {
   return (
     <main className="shell">
@@ -6,14 +8,8 @@ export default function Home() {
       <p className="lede">
         Bukti turns a public claim into a Gonka-verified, immutable Sui evidence receipt.
       </p>
-      <section className="card" aria-labelledby="status-title">
-        <div>
-          <p className="eyebrow">STATUS</p>
-          <h2 id="status-title">Scaffold ready</h2>
-          <p>The verification flow is the next build slice.</p>
-        </div>
-        <a href="/api/health">API health check →</a>
-      </section>
+      <CheckForm />
+      <p className="health-link"><a href="/api/health">API health check →</a></p>
     </main>
   );
 }
