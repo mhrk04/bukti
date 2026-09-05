@@ -2,6 +2,7 @@ import type { CanonicalReport } from "@/lib/canonical-report";
 import { sha256HexBytes } from "@/lib/canonical-report";
 import { fetchV2Report } from "@/lib/report";
 import { readBlob, WalrusError } from "@/lib/walrus";
+import { formatPercent } from "@/lib/format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -103,7 +104,7 @@ export default async function ReportPage({ params }: { params: Promise<{ objectI
         <div className="score-row">
           <div>
             <p className="eyebrow">BUKTI SCORE</p>
-            <strong>{report.aggregateScore}%</strong>
+            <strong className="tabular-nums">{formatPercent(report.aggregateScore)}</strong>
           </div>
           <div className="verdict">{report.aggregateVerdict}</div>
         </div>
@@ -160,7 +161,7 @@ export default async function ReportPage({ params }: { params: Promise<{ objectI
           {report.models.map((item) => (
             <section className="model-result" key={`${item.model}-${item.requestId}`}>
               <p className="model-name">{item.model}</p>
-              <p><strong>{item.score}%</strong> · {item.verdict}</p>
+              <p><strong className="tabular-nums">{formatPercent(item.score)}</strong> · {item.verdict}</p>
               <p className="muted">{item.reasoning}</p>
               {item.citations.length > 0 && (
                 <div className="model-citations">
