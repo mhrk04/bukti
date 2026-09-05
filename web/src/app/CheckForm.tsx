@@ -63,6 +63,45 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
             <div className="verdict">{result.aggregateVerdict}</div>
           </div>
           <p className="claim">“{result.claim}”</p>
+          {result.evidence && (
+            <section className="evidence" aria-label="Retrieved source">
+              <p className="eyebrow">RETRIEVED SOURCE</p>
+              <p className="source-title">{result.evidence.title || result.evidence.url}</p>
+              <p className="muted">
+                <a href={result.evidence.url} target="_blank" rel="noreferrer noopener">
+                  {result.evidence.url}
+                </a>
+              </p>
+              <p className="muted">Retrieved: {new Date(result.evidence.retrievedAt).toLocaleString()}</p>
+              <p className="excerpt">{result.evidence.excerpt.slice(0, 500)}{result.evidence.excerpt.length > 500 ? "…" : ""}</p>
+              <p className="request-id">Evidence digest: {result.evidence.digest.slice(0, 16)}…</p>
+            </section>
+          )}
+          {result.sources && result.sources.length > 0 && (
+            <section className="sources" aria-label="Retrieved sources">
+              <p className="eyebrow">RETRIEVED SOURCES</p>
+              <ul className="source-list">
+                {result.sources.map((source) => (
+                  <li className="source-item" key={source.url}>
+                    <p className="source-title">
+                      {source.title || source.url}
+                      {source.trusted && <span className="trusted-tag"> · trusted</span>}
+                    </p>
+                    <p className="muted">
+                      <a href={source.url} target="_blank" rel="noreferrer noopener">
+                        {source.url}
+                      </a>
+                    </p>
+                    <p className="muted">Retrieved: {new Date(source.retrievedAt).toLocaleString()}</p>
+                    <p className="excerpt">
+                      {source.excerpt.slice(0, 300)}
+                      {source.excerpt.length > 300 ? "…" : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <p className="muted">Model disagreement: {result.disagreement} points</p>
           {result.warnings.length > 0 && <p className="warning">Partial result: {result.warnings.join("; ")}</p>}
           <div className="model-grid">
@@ -71,6 +110,18 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
                 <p className="model-name">{item.model}</p>
                 <p><strong>{item.score}%</strong> · {item.verdict}</p>
                 <p className="muted">{item.reasoning}</p>
+                {item.evidence.length > 0 && (
+                  <div className="model-citations">
+                    <p className="eyebrow">CITED SOURCES</p>
+                    <ul>
+                      {item.evidence.map((url) => (
+                        <li key={url}>
+                          <a href={url} target="_blank" rel="noreferrer noopener">{url}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <p className="request-id">Gonka Request ID: {item.requestId || "unavailable"}</p>
               </section>
             ))}

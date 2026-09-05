@@ -6,6 +6,7 @@
     "build": "pnpm --filter web build",
     "dev": "pnpm --filter web dev",
     "typecheck": "pnpm --filter web typecheck",
+    "selfcheck": "pnpm --filter web selfcheck",
     "move:build": "sui move build --path move/bukti",
     "move:test": "sui move test --path move/bukti"
   }

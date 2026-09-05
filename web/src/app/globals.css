@@ -34,6 +34,15 @@ button:disabled { cursor: wait; opacity: .6; }
 .muted { color: var(--muted); line-height: 1.5; }
 .model-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
 .model-result { border-top: 1px solid var(--line); padding-top: 1rem; }
+.sources { margin: 1.5rem 0; border-top: 1px solid var(--line); padding-top: 1rem; }
+.source-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; }
+.source-item { border-left: 2px solid var(--line); padding-left: .9rem; }
+.source-title { font-weight: 600; overflow-wrap: anywhere; }
+.trusted-tag { color: var(--accent); font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
+.excerpt { line-height: 1.5; margin-top: .35rem; }
+.model-citations { margin: .5rem 0; font-size: .8rem; }
+.model-citations ul { padding-left: 1.1rem; margin: .25rem 0; }
+.model-citations a { overflow-wrap: anywhere; }
 .model-name { color: var(--accent); font-size: .8rem; overflow-wrap: anywhere; }
 .request-id { color: var(--muted); font-family: monospace; font-size: .75rem; overflow-wrap: anywhere; }
 .health-link { margin-top: 1.5rem; font-size: .85rem; }
