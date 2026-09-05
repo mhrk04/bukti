@@ -21,12 +21,12 @@ a:focus-visible, button:focus-visible, textarea:focus-visible, .tooltip:focus-vi
 .site-header nav a:hover { color: var(--ink); }
 .brand { color: var(--ink); display: inline-flex; align-items: center; gap: .65rem; font: 700 1.25rem Georgia, serif; text-decoration: none; letter-spacing: -.03em; }
 .brand-mark { width: 2rem; height: 2rem; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
-.shell { max-width: 880px; margin: 0 auto; padding: 7rem 2rem 5rem; }
+.shell { max-width: 880px; margin: 0 auto; padding: 4rem 2rem 5rem; }
 .eyebrow { color: var(--accent-dark); font-size: .7rem; font-weight: 700; letter-spacing: .16em; margin: 0 0 1.25rem; text-transform: uppercase; }
 h1, h2 { font-family: Georgia, serif; font-weight: 400; }
 h1 { max-width: 760px; font-size: clamp(3.2rem, 9vw, 7.5rem); line-height: .92; letter-spacing: -.07em; margin: 0; }
 h1 em { color: var(--accent); font-style: italic; }
-.lede { max-width: 570px; color: var(--muted); font-size: 1.15rem; line-height: 1.6; margin: 2rem 0 4rem; }
+.lede { max-width: 570px; color: var(--muted); font-size: 1.15rem; line-height: 1.6; margin: 1.5rem 0 4rem; }
 .card { border: 1px solid var(--line); display: flex; justify-content: space-between; gap: 2rem; align-items: end; padding: 1.5rem; background: var(--surface); }
 .card h2 { margin: 0 0 .5rem; font-size: 1.5rem; }
 .card p:not(.eyebrow) { color: var(--muted); margin: 0; }
@@ -78,4 +78,4 @@ button:disabled { cursor: wait; opacity: .55; }
 .tabular-nums { font-variant-numeric: tabular-nums; }
 @keyframes shimmer { to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
-@media (max-width: 640px) { .site-header { padding: 1.25rem; } .shell { padding: 5rem 1.25rem 4rem; } .card { display: block; } .card a { display: inline-block; margin-top: 2rem; } h1 { font-size: clamp(3.2rem, 16vw, 5rem); } .score-row { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 640px) { .site-header { padding: 1.25rem; } .shell { padding: 3rem 1.25rem 4rem; } .card { display: block; } .card a { display: inline-block; margin-top: 2rem; } h1 { font-size: clamp(3.2rem, 16vw, 5rem); } .score-row { align-items: flex-start; flex-direction: column; } }
