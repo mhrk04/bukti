@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type { ClaimCheck } from "@/lib/gonka";
+import { formatPercent } from "@/lib/format";
 
 function Tip({ label, children }: { label: string; children: string }) {
   return <span className="tooltip" title={children} tabIndex={0} aria-label={label + ": " + children}>{label}</span>;
@@ -73,7 +74,7 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
           <div className="score-row">
             <div>
               <p className="eyebrow">BUKTI SCORE</p>
-              <strong>{result.aggregateScore}%</strong>
+              <strong className="tabular-nums">{formatPercent(result.aggregateScore)}</strong>
             </div>
             <div className="verdict">{result.aggregateVerdict}</div>
           </div>
@@ -130,7 +131,7 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
             {result.results.map((item) => (
               <section className="model-result" key={`${item.model}-${item.requestId}`}>
                 <p className="model-name">{item.model}</p>
-                <p><strong>{item.score}%</strong> · {item.verdict}</p>
+                <p><strong className="tabular-nums">{formatPercent(item.score)}</strong> · {item.verdict}</p>
                 <p className="muted">{item.reasoning}</p>
                 {item.evidence.length > 0 && (
                   <div className="model-citations">

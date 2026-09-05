@@ -1,13 +1,10 @@
 import { fetchPublicReports, type PublicReport } from "@/lib/reports-index";
+import { formatScoreBps } from "@/lib/format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Formats a score in basis points as a whole-percent string. */
-function formatScore(scoreBps: number): string {
-  return `${Math.round(scoreBps / 100)}%`;
-}
-
 /** Formats an ISO/RFC timestamp for display, falling back to the raw value. */
 function formatTimestamp(timestamp: string | null): string {
   if (!timestamp) return "time unavailable";
@@ -20,7 +17,7 @@ function ReportRow({ report }: { report: PublicReport }) {
     <li className="source-item">
       <p className="claim">“{report.claim}”</p>
       <p className="muted">
-        <strong>{formatScore(report.scoreBps)}</strong> · {report.verdict}
+        <strong className="tabular-nums">{formatScoreBps(report.scoreBps)}</strong> · {report.verdict}
       </p>
       <p className="muted">{formatTimestamp(report.timestamp)}</p>
       <p className="health-link">
