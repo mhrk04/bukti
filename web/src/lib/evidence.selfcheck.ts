@@ -9,6 +9,7 @@ import {
   extractReadableText,
   extractTitle,
   isPrivateAddress,
+  isSocialPostUrl,
   looksLikeUrl,
   sha256Hex,
   type EvidenceSource,
@@ -21,6 +22,13 @@ test("looksLikeUrl distinguishes URLs from text claims", () => {
   assert.equal(looksLikeUrl("Malaysia will introduce a four-day work week."), false);
   assert.equal(looksLikeUrl("check https://example.com now"), false);
   assert.equal(looksLikeUrl("ftp://example.com"), false);
+});
+
+test("isSocialPostUrl recognizes public X/Twitter status URLs", () => {
+  assert.equal(isSocialPostUrl("https://x.com/user/status/123456"), true);
+  assert.equal(isSocialPostUrl("https://twitter.com/user/status/123456"), true);
+  assert.equal(isSocialPostUrl("https://x.com/user/photo/123456"), false);
+  assert.equal(isSocialPostUrl("https://example.com/status/123456"), false);
 });
 
 // URL policy: reject non-http(s) schemes and embedded credentials.

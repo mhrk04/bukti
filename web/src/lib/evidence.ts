@@ -91,6 +91,41 @@ export function looksLikeUrl(input: string): boolean {
   }
 }
 
+/** Returns true for public X/Twitter status URLs supported by the oEmbed endpoint. */
+export function isSocialPostUrl(input: string): boolean {
+  try {
+    const url = new URL(input.trim());
+    return /^(www\.)?(x\.com|twitter\.com)$/.test(url.hostname) && /^\/[^/]+\/status\/\d+/.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
+/** Retrieves public X/Twitter post text without requiring OAuth or scraping the app shell. */
+async function retrieveSocialPost(rawUrl: string): Promise<EvidenceSource> {
+  const requestedUrl = assertUrlPolicy(rawUrl).toString();
+  const response = await fetch(
+    "https://publish.twitter.com/oembed?url=" + encodeURIComponent(requestedUrl),
+    { headers: { accept: "application/json" }, signal: AbortSignal.timeout(EVIDENCE_LIMITS.timeoutMs) },
+  );
+  if (!response.ok) throw new EvidenceError("Social post could not be retrieved");
+  const body = JSON.parse(await readBounded(response, 100_000)) as {
+    html?: unknown;
+    author_name?: unknown;
+  };
+  const html = typeof body.html === "string" ? body.html : "";
+  const excerpt = extractReadableText(html).slice(0, EVIDENCE_LIMITS.maxExcerptChars);
+  if (!excerpt) throw new EvidenceError("Social post has no readable text");
+  return {
+    url: requestedUrl,
+    requestedUrl,
+    title: typeof body.author_name === "string" ? body.author_name.slice(0, EVIDENCE_LIMITS.maxTitleChars) : "",
+    excerpt,
+    retrievedAt: new Date().toISOString(),
+    byteLength: html.length,
+  };
+}
+
 /**
  * Parses and applies scheme/credential/port policy to a URL string.
  * Throws EvidenceError on any policy violation.
@@ -350,7 +385,9 @@ export async function resolveEvidence(input: string): Promise<EvidenceResult> {
     return { kind: "text", source: null };
   }
   try {
-    const source = await retrieveEvidence(trimmed);
+    const source = isSocialPostUrl(trimmed)
+      ? await retrieveSocialPost(trimmed)
+      : await retrieveEvidence(trimmed);
     return { kind: "url", source };
   } catch (error) {
     const reason = error instanceof EvidenceError ? error.message : "Evidence could not be retrieved";

@@ -3,6 +3,7 @@ import {
   capScoreWithoutEvidence,
   resolveEvidence,
   sha256Hex,
+  isSocialPostUrl,
   type EvidenceSource,
 } from "@/lib/evidence";
 import { renderSearchBlock, resolveTrustedSources, type SearchSource } from "@/lib/search";
@@ -248,7 +249,11 @@ export async function checkClaim(claim: string): Promise<ClaimCheck> {
 
   const evidenceWarnings =
     evidenceResult.kind === "error" ? [`source: ${evidenceResult.reason}`] : [];
-  const searchWarnings = searchResult.kind === "error" ? [`search: ${searchResult.reason}`] : [];
+    const searchWarnings = searchResult.kind === "error" ? [`search: ${searchResult.reason}`] : [];
+  const socialWarning =
+    source && isSocialPostUrl(source.requestedUrl)
+      ? "Social post content retrieved; it is evidence to assess, not independent verification."
+      : null;
 
   // Gonka accounts can reject concurrent long reasoning requests; run the
   // configured models one at a time so source-backed checks get both results.
@@ -260,6 +265,7 @@ export async function checkClaim(claim: string): Promise<ClaimCheck> {
   const warnings = [
     ...evidenceWarnings,
     ...searchWarnings,
+    ...(socialWarning ? [socialWarning] : []),
     ...settled.flatMap((item, index) =>
       item.status === "rejected"
         ? [`${models[index]}: ${item.reason instanceof Error ? item.reason.message : "request failed"}`]
