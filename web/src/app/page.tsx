@@ -9,6 +9,7 @@ export default function Home() {
         Bukti turns a public claim into a Gonka-verified, immutable Sui evidence receipt.
       </p>
       <WalletAppLoader />
+      <p className="health-link"><a href="/reports">Browse public reports →</a></p>
       <p className="health-link"><a href="/api/health">API health check →</a></p>
     </main>
   );
