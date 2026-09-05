@@ -89,11 +89,16 @@ After publishing the Move package to Sui testnet, add its package ID as `NEXT_PU
 
 The BUDI95 demo is published and immutable:
 
+- Live app: https://bukti-nine.vercel.app
+
 - Sui package: `0xb414425d559cd963c693a3afabae0ad48e4dcd458c1c4cab97aece3fe0157631`
 - Report object: `0xb931f7ae5fc61ba7f10bea5104f2963c9e069d8754e3a9119d08693deef5f7b7`
 - Transaction: `3QnwMuNqUcVxyqRke4qL3vEEwwmqzcFtoAwUsScx4Gjc`
 - Walrus blob: `YIagqBooveVw2ifLbAoUzVetl4DiWizEvGXP4sy_G7E`
 - Canonical snapshot SHA-256: `f1c22bc74a461c61939ef66cfa6672ce1be0d7cd00202a955656eb6fb66b299b`
+
+The testnet demo keeps claim checking free; payment and stablecoin billing are
+out of scope for this submission.
 
 ## Gonka integration
 

@@ -31,3 +31,5 @@ move/**/.coverage*
 .idea/
 .vscode/
 *.swp
+.vercel
+.env*
