@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { ClaimCheck } from "@/lib/gonka";
 import { formatPercent } from "@/lib/format";
+
+const progressMessages = [
+  "Retrieving live evidence…",
+  "Asking the first Gonka model…",
+  "Asking the second Gonka model…",
+  "Comparing both model assessments…",
+];
 
 function Tip({ label, children }: { label: string; children: string }) {
   return <span className="tooltip" title={children} tabIndex={0} aria-label={label + ": " + children}>{label}</span>;
@@ -17,10 +24,20 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
   const [result, setResult] = useState<ClaimCheck | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progressIndex, setProgressIndex] = useState(0);
+
+  useEffect(() => {
+    if (!loading) return;
+    const timer = window.setInterval(() => {
+      setProgressIndex((index) => Math.min(index + 1, progressMessages.length - 1));
+    }, 8_000);
+    return () => window.clearInterval(timer);
+  }, [loading]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
+    setProgressIndex(0);
     setError("");
     setResult(null);
 
@@ -73,7 +90,7 @@ export function CheckForm({ onResult }: { onResult?: (result: ClaimCheck) => voi
           <span className="skeleton-line skeleton-score" />
           <span className="skeleton-line" />
           <span className="skeleton-line skeleton-short" />
-          <p className="muted">Retrieving evidence and comparing models…</p>
+          <p className="muted">{progressMessages[progressIndex]}</p>
         </div>
       )}
       {result && (

@@ -13,13 +13,13 @@ import {
   type Citation,
 } from "@/lib/citations";
 
-type GonkaMessage = {
+type GonkaResponse = {
   model?: string;
-  content?: Array<{ type?: string; text?: string }>;
+  choices?: Array<{ message?: { content?: string | null } }>;
 };
 
 const GONKA_TIMEOUT_MS = 20_000;
-const GONKA_MAX_TOKENS = 1_200;
+const GONKA_MAX_TOKENS = 2_000;
 
 export type { Citation, CitationStance } from "@/lib/citations";
 
@@ -115,12 +115,8 @@ function parseModelResult(text: string) {
   return { score: Math.round(score), verdict, reasoning, evidence };
 }
 
-function extractText(message: GonkaMessage) {
-  return (message.content ?? [])
-    .filter((block) => block.type === "text" && block.text)
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
+function extractText(response: GonkaResponse) {
+  return response.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 /**
@@ -174,11 +170,10 @@ async function checkWithModel(
     "</claim>",
   ].filter((part) => part.length > 0);
 
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/messages`, {
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/chat/completions`, {
     method: "POST",
     headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      authorization: `Bearer ${apiKey}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({
@@ -194,7 +189,7 @@ async function checkWithModel(
     signal: AbortSignal.timeout(GONKA_TIMEOUT_MS),
   });
 
-  const body = (await response.json()) as GonkaMessage & { error?: { message?: string } };
+  const body = (await response.json()) as GonkaResponse & { error?: { message?: string } };
   if (!response.ok) {
     throw new Error(body.error?.message || `Gonka request failed (${response.status})`);
   }
@@ -256,12 +251,14 @@ export async function checkClaim(claim: string): Promise<ClaimCheck> {
       ? "Social post content retrieved; it is evidence to assess, not independent verification."
       : null;
 
-  // Gonka accounts can reject concurrent long reasoning requests; run the
-  // configured models one at a time so source-backed checks get both results.
-  const settled: PromiseSettledResult<ModelCheck>[] = [];
-  for (const model of models) {
-    settled.push(await Promise.allSettled([checkWithModel(claim, model, source, searchSources)]).then(([item]) => item));
-  }
+  const settled = await Promise.all(
+    models.map((model) =>
+      checkWithModel(claim, model, source, searchSources).then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (reason) => ({ status: "rejected" as const, reason }),
+      ),
+    ),
+  );
   const results = settled.flatMap((item) => (item.status === "fulfilled" ? [item.value] : []));
   const warnings = [
     ...evidenceWarnings,
