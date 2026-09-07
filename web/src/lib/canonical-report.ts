@@ -76,6 +76,83 @@ export type CanonicalSource = {
   official: boolean;
 };
 
+function boundedString(value: unknown, maxLength: number): value is string {
+  return typeof value === "string" && value.length <= maxLength;
+}
+
+/** Validates the exact data shape accepted by the server-side Walrus publisher. */
+export function isCanonicalReport(value: unknown): value is CanonicalReport {
+  if (!value || typeof value !== "object") return false;
+  const report = value as Record<string, unknown>;
+  if (
+    report.version !== CANONICAL_REPORT_VERSION ||
+    !boundedString(report.claim, 4_000) ||
+    typeof report.aggregateScore !== "number" ||
+    !Number.isInteger(report.aggregateScore) ||
+    report.aggregateScore < 0 ||
+    report.aggregateScore > 100 ||
+    !boundedString(report.aggregateVerdict, 100) ||
+    typeof report.disagreement !== "number" ||
+    !Number.isInteger(report.disagreement) ||
+    report.disagreement < 0 ||
+    report.disagreement > 100 ||
+    !Array.isArray(report.models) ||
+    report.models.length > 10 ||
+    !Array.isArray(report.sources) ||
+    report.sources.length > 4 ||
+    !Array.isArray(report.warnings) ||
+    report.warnings.length > 20
+  ) return false;
+
+  const modelsValid = report.models.every((value) => {
+    if (!value || typeof value !== "object") return false;
+    const model = value as Record<string, unknown>;
+    return (
+      boundedString(model.model, 200) &&
+      boundedString(model.requestId, 200) &&
+      typeof model.score === "number" &&
+      Number.isInteger(model.score) &&
+      model.score >= 0 &&
+      model.score <= 100 &&
+      boundedString(model.verdict, 100) &&
+      boundedString(model.reasoning, 4_000) &&
+      Array.isArray(model.citations) &&
+      model.citations.length <= 10 &&
+      model.citations.every((citation) => {
+        if (!citation || typeof citation !== "object") return false;
+        const item = citation as Record<string, unknown>;
+        return boundedString(item.url, 2_000) && boundedString(item.quote, 500) && boundedString(item.stance, 20);
+      })
+    );
+  });
+
+  const evidenceValid = report.evidence === null || (
+    typeof report.evidence === "object" &&
+    boundedString((report.evidence as Record<string, unknown>).url, 2_000) &&
+    boundedString((report.evidence as Record<string, unknown>).requestedUrl, 2_000) &&
+    boundedString((report.evidence as Record<string, unknown>).title, 300) &&
+    boundedString((report.evidence as Record<string, unknown>).excerpt, 4_000) &&
+    boundedString((report.evidence as Record<string, unknown>).retrievedAt, 100) &&
+    boundedString((report.evidence as Record<string, unknown>).digest, 128)
+  );
+
+  const sourcesValid = report.sources.every((value) => {
+    if (!value || typeof value !== "object") return false;
+    const source = value as Record<string, unknown>;
+    return (
+      boundedString(source.title, 300) &&
+      boundedString(source.url, 2_000) &&
+      boundedString(source.excerpt, 1_200) &&
+      boundedString(source.retrievedAt, 100) &&
+      (source.publishedAt === null || boundedString(source.publishedAt, 100)) &&
+      typeof source.trusted === "boolean" &&
+      typeof source.official === "boolean"
+    );
+  });
+
+  return modelsValid && evidenceValid && sourcesValid && report.warnings.every((warning) => boundedString(warning, 500));
+}
+
 /**
  * Deterministic JSON serializer. Emits object keys in sorted order recursively,
  * with no extra whitespace, so the same value always yields identical bytes.

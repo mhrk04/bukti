@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { MAX_CANONICAL_REPORT_BYTES, sha256HexBytes } from "@/lib/canonical-report";
+import { isCanonicalReport, MAX_CANONICAL_REPORT_BYTES, sha256HexBytes } from "@/lib/canonical-report";
+import { acquireRequestSlot } from "@/lib/request-limits";
 import { readBlob, storePermanentBlob, WalrusError } from "@/lib/walrus";
 
 export const runtime = "nodejs";
@@ -28,6 +29,15 @@ async function readFreshBlob(blobId: string): Promise<Uint8Array> {
  * matches. Only then do we return the blob ID and digest for the on-chain call.
  */
 export async function POST(request: Request) {
+  const slot = acquireRequestSlot(request, "publish");
+  if (!slot.ok) {
+    return NextResponse.json(
+      { error: "Too many publish requests; please retry later" },
+      { status: 429, headers: { "Retry-After": String(slot.retryAfter) } },
+    );
+  }
+
+  try {
   const contentType = request.headers.get("content-type") ?? "";
   if (!/^application\/json/i.test(contentType)) {
     return NextResponse.json({ error: "Content-Type must be application/json" }, { status: 415 });
@@ -56,12 +66,11 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Canonical report must be valid JSON" }, { status: 400 });
   }
-  if (
-    !parsed ||
-    typeof parsed !== "object" ||
-    (parsed as { version?: unknown }).version !== 1
-  ) {
+  if (!isCanonicalReport(parsed)) {
     return NextResponse.json({ error: "Unrecognized canonical report shape" }, { status: 400 });
+  }
+  if (JSON.stringify(parsed) !== raw) {
+    return NextResponse.json({ error: "Canonical report must be serialized deterministically" }, { status: 400 });
   }
 
   const digest = await sha256HexBytes(bytes);
@@ -85,5 +94,8 @@ export async function POST(request: Request) {
     const message = error instanceof WalrusError ? error.message : "Walrus publish failed";
     console.error("walrus publish failed", message);
     return NextResponse.json({ error: message }, { status: 502 });
+  }
+  } finally {
+    slot.release();
   }
 }

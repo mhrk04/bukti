@@ -5,6 +5,7 @@ import {
   CANONICAL_REPORT_VERSION,
   canonicalStringify,
   canonicalReportBytes,
+  isCanonicalReport,
   sha256HexBytes,
   toCanonicalReport,
 } from "./canonical-report.ts";
@@ -88,6 +89,13 @@ test("toCanonicalReport tags version and normalizes null requestId", () => {
   const modelA = report.models.find((model) => model.model === "model-a");
   assert.ok(modelA);
   assert.equal(modelA.requestId, "");
+});
+
+test("isCanonicalReport rejects malformed publish payloads", () => {
+  const report = toCanonicalReport(fixture() as never);
+  assert.equal(isCanonicalReport(report), true);
+  assert.equal(isCanonicalReport({ version: 1 }), false);
+  assert.equal(isCanonicalReport({ ...report, aggregateScore: 101 }), false);
 });
 
 // sha256HexBytes matches a known digest for a fixed input.
